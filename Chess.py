@@ -1,3 +1,7 @@
+from time import sleep
+from os import system as sys
+from random import choice
+
 class ChessBoard:
     def __init__(self):
         self.Board = [[[] for i in range(8)] for i in range(8)]
@@ -6,25 +10,112 @@ class ChessBoard:
     def SetUp(self):
         # Placing pawns
         for i in range(self.Board.__len__()):
-            self.Board[6][i] = "♟"  # White pawn
-            self.Board[1][i] = "♙"  # Black pawn
+            self.Board[1][i] = "♟"  # Black pawn
+            self.Board[6][i] = "♙"  # White pawn
 
         # Placing other pieces
         Pieces = ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"]
         for i in range(8):
-            self.Board[7][i] = Pieces[i]  # White pieces
-            self.Board[0][i] = Pieces[i].replace("♜", "♖").replace("♞", "♘").replace("♝", "♗").replace("♛", "♕").replace("♚", "♔")  # Black pieces
+            self.Board[0][i] = Pieces[i]  # Black pieces
+            self.Board[7][i] = Pieces[i].replace("♜", "♖").replace("♞", "♘").replace("♝", "♗").replace("♛", "♕").replace("♚", "♔")  # White pieces
 
     def PrintBoard(self):
+        sys("clear")
         for Row in self.Board:
             for i, Peice in enumerate(Row):
                 print(Peice if Peice else "·", end="")
                 if i != Row.__len__() - 1:
-                    print(" | ", end="")
+                    print("  ", end="")
             print()
 
-# Create an instance of the ChessBoard class and display it
+    def MovePeice(self, X0, Y0, X1, Y1):
+        self.Board[Y1][X1] = self.Board[Y0][X0]
+        self.Board[Y0][X0] = None
+
+    def Color(self, X, Y):
+        if self.Board[Y][X] == []:
+            return None
+        return "Black" if self.Board[Y][X] in ["♜", "♞", "♝", "♛", "♚", "♟"] else "White"
+    
+    def Peice(self, X, Y):
+        if self.Board[Y][X] == []:
+            return None
+        return self.Board[Y][X]
+
+    def GetValidMoves(self, Color):
+        Moves = []
+        
+        for Y, Row in enumerate(self.Board):
+            for X, Peice in enumerate(Row):
+
+                if self.Color(X, Y) == "White" and Color == "White": # White peices
+
+                    if Peice == "♙":
+                        if self.Peice(X, Y - 1) == None:
+                            Moves.append((X, Y, X, Y - 1))
+                        if X > 0 and self.Color(X - 1, Y - 1) == "Black":
+                            Moves.append((X, Y, X - 1, Y - 1))
+                        if X < 7 and self.Color(X + 1, Y - 1) == "Black":
+                            Moves.append((X, Y, X + 1, Y - 1))
+                    if Peice == "♖":
+                        for i in range(-8, 8):
+                            if Y - i >= 0 and Y - i < 8:
+                                if self.Color(X, Y - i) == "White":
+                                    break
+                                Moves.append((X, Y, X, Y - i))
+                                if self.Color(X, Y - i) == "Black":
+                                    break
+                        for i in range(-8, 8):
+                            if X - i >= 0 and X - i < 8:
+                                if self.Color(X - i, Y) == "White":
+                                    break
+                                Moves.append((X, Y, X - i, Y))
+                                if self.Color(X - i, Y) == "Black":
+                                    break
+
+                if self.Color(X, Y) == "Black" and Color == "Black": # Black peices
+
+                    if Peice == "♟":
+                        if self.Peice(X, Y + 1) == None:
+                            Moves.append((X, Y, X, Y + 1))
+
+        return Moves
+    
+    def GetValidMovesForPeice(self, X, Y):
+        Moves = []
+        
+        if self.Color(X, Y) == "White":
+            for Move in self.GetValidMoves("White"):
+                if Move[0] == X and Move[1] == Y:
+                    Moves.append(Move)
+        if self.Color(X, Y) == "Black":
+            for Move in self.GetValidMoves("Black"):
+                if Move[0] == X and Move[1] == Y:
+                    Moves.append(Move)
+
+        return Moves
+
 Board = ChessBoard()
-Board.Board[7][1] = None
-Board.Board[5][2] = "♞"
+ValidMoves = Board.GetValidMovesForPeice(0, 7)
 Board.PrintBoard()
+
+for Move in ValidMoves:
+    print(Move)
+
+TMoves = 0
+while TMoves < 100:
+    ValidMoves = Board.GetValidMoves("White")
+    Board.MovePeice(*choice(ValidMoves))
+    Board.PrintBoard()
+    sleep(.1)
+    TMoves = round(TMoves + .5, 1)
+    ValidMoves = Board.GetValidMoves("Black")
+    Board.MovePeice(*choice(ValidMoves))
+    Board.PrintBoard()
+    sleep(.1)
+    TMoves = round(TMoves + .5, 1)
+
+ValidMoves = Board.GetValidMoves("White")
+
+for Move in ValidMoves:
+    print(Move)
