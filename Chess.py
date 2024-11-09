@@ -1,13 +1,25 @@
 from time import sleep
 from os import system as sys
 from random import choice
-from colorama import Fore
+import InstallLibraries
+import Bot
 import copy
+
+InstallLibraries.InstallColorama() # Auto install colorama if it isn't already installed
+from colorama import Fore
 
 class ChessBoard:
     def __init__(self):
         self.Board = [[None for i in range(8)] for i in range(8)]
         self.SetUp()
+
+        # Castling
+        self.WhiteKingMoved = False
+        self.A1RookMoved = False
+        self.H1RookMoved = False
+        self.BlackKingMoved = False
+        self.A8RookMoved = False
+        self.H8RookMoved = False
 
     def SetUp(self):
         # Placing pawns
@@ -26,12 +38,12 @@ class ChessBoard:
             return None
         return "Black" if self.Board[Y][X] in ["♜", "♞", "♝", "♛", "♚", "♟"] else "White"
 
-    def PrintBoard(self, HighlightValidMovesForPeice = None, MatedColor = None):
+    def PrintBoard(self, HighlightLegalMovesForPeice = None, MatedColor = None):
         sys("clear")
 
         MovesForPeice = None
-        if HighlightValidMovesForPeice:
-            MovesForPeice = self.GetValidMovesForPeice(*HighlightValidMovesForPeice)
+        if HighlightLegalMovesForPeice:
+            MovesForPeice = self.GetLegalMovesForPeice(*HighlightLegalMovesForPeice)
             NewList = []
             for Move in MovesForPeice:
                 NewList.append((Move[2], Move[3]))
@@ -42,10 +54,10 @@ class ChessBoard:
         for Y, Row in enumerate(self.Board):
             print(8 - Y, end=" ")
             for X, Peice in enumerate(Row):
-                Color0 = Fore.CYAN 
-                Color1 = Fore.RED
-                Color2 = Fore.YELLOW
-                Color3 = Fore.BLACK
+                Color0 = Fore.CYAN
+                Color1 = Fore.MAGENTA
+                Color2 = Fore.YELLOW # Legal moves
+                Color3 = Fore.LIGHTBLACK_EX # Checkmated
                 if Peice == None:
                     if MovesForPeice and (X, Y) in MovesForPeice:
                         print(Color2 + "." + Fore.RESET, end="")
@@ -70,9 +82,36 @@ class ChessBoard:
             print()
         print("  a b c d e f g h")
 
-    def MovePeice(self, X0, Y0, X1, Y1):
+    def Peice(self, X, Y):
+        if self.Board[Y][X] == []:
+            return None
+        return self.Board[Y][X]
+
+    def MovePeice(self, X0, Y0, X1, Y1, CountMoveKing = True):
+        if self.Peice(X0, Y0) in ["♔", "♚"] and abs(X0 - X1) >= 2:
+            if X1 == 6:  # Kingside castling
+                self.Board[Y0][5] = self.Board[Y0][7]
+                self.Board[Y0][7] = None
+            elif X1 == 2:  # Queenside castling
+                self.Board[Y0][3] = self.Board[Y0][0]
+                self.Board[Y0][0] = None
         self.Board[Y1][X1] = self.Board[Y0][X0]
         self.Board[Y0][X0] = None
+        if (self.Peice(X1, Y1) == "♙" or self.Peice(X1, Y1) == "♟") and (Y1 == 0 or Y1 == 7):
+            self.Board[Y1][X1] = "♕" if self.Color(X1, Y1) == "White" else "♛"
+        if CountMoveKing == True:
+            if self.Peice(0, 7) not in ["♖", "♜"]:
+                self.A1RookMoved = True
+            if self.Peice(7, 7) not in ["♖", "♜"]:
+                self.H1RookMoved  = True
+            if self.Peice(0, 0) not in ["♖", "♜"]:
+                self.A8RookMoved = True
+            if self.Peice(7, 0) not in ["♖", "♜"]:
+                self.H8RookMoved = True
+            if self.Peice(4, 7) != "♔":
+                self.WhiteKingMoved = True
+            if self.Peice(4, 0) != "♚":
+                self.BlackKingMoved = True
 
     def FindKing(self, Color):
         for Y, Row in enumerate(self.Board):
@@ -81,15 +120,10 @@ class ChessBoard:
                     return (X, Y)
                 if Peice == "♚" and Color == "Black":
                     return (X, Y)
-    
-    def Peice(self, X, Y):
-        if self.Board[Y][X] == []:
-            return None
-        return self.Board[Y][X]
 
     def IsInCheck(self, Color):
         King = self.FindKing(Color)
-        for Move in self.GetValidMoves("Black" if Color == "White" else "White", True):
+        for Move in self.GetLegalMoves("Black" if Color == "White" else "White", True):
             if Move[2] == King[0] and Move[3] == King[1]:
                 return True
             
@@ -117,7 +151,7 @@ class ChessBoard:
 
             return (X0, Y0)
 
-    def GetValidMoves(self, Color, FromGettingCheck = False):
+    def GetLegalMoves(self, Color, FromGettingCheck = False):
         Moves = []
         
         for Y, Row in enumerate(self.Board):
@@ -136,7 +170,7 @@ class ChessBoard:
                             if X < 7 and self.Color(X + 1, Y - 1) == "Black":
                                 Moves.append((X, Y, X + 1, Y - 1))
                     if Peice == "♖":
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y - i < 0:
                                 break
                             if self.Color(X, Y - i) == "White":
@@ -144,7 +178,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y - i))
                             if self.Color(X, Y - i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y + i > 7:
                                 break
                             if self.Color(X, Y + i) == "White":
@@ -152,7 +186,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y + i))
                             if self.Color(X, Y + i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0:
                                 break
                             if self.Color(X - i, Y) == "White":
@@ -160,7 +194,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y))
                             if self.Color(X - i, Y) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7:
                                 break
                             if self.Color(X + i, Y) == "White":
@@ -186,7 +220,7 @@ class ChessBoard:
                         if X + 1 <= 7 and Y + 2 <= 7 and self.Color(X + 1, Y + 2) != "White":
                             Moves.append((X, Y, X + 1, Y + 2))
                     if Peice == "♗":
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y - i < 0:
                                 break
                             if self.Color(X - i, Y - i) == "White":
@@ -194,7 +228,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y - i))
                             if self.Color(X - i, Y - i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y - i < 0:
                                 break
                             if self.Color(X + i, Y - i) == "White":
@@ -202,7 +236,7 @@ class ChessBoard:
                             Moves.append((X, Y, X + i, Y - i))
                             if self.Color(X + i, Y - i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y + i > 7:
                                 break
                             if self.Color(X - i, Y + i) == "White":
@@ -210,7 +244,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y + i))
                             if self.Color(X - i, Y + i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y + i > 7:
                                 break
                             if self.Color(X + i, Y + i) == "White":
@@ -219,7 +253,7 @@ class ChessBoard:
                             if self.Color(X + i, Y + i) == "Black":
                                 break
                     if Peice == "♕":
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y - i < 0:
                                 break
                             if self.Color(X, Y - i) == "White":
@@ -227,7 +261,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y - i))
                             if self.Color(X, Y - i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y + i > 7:
                                 break
                             if self.Color(X, Y + i) == "White":
@@ -235,7 +269,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y + i))
                             if self.Color(X, Y + i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0:
                                 break
                             if self.Color(X - i, Y) == "White":
@@ -243,7 +277,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y))
                             if self.Color(X - i, Y) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7:
                                 break
                             if self.Color(X + i, Y) == "White":
@@ -251,7 +285,7 @@ class ChessBoard:
                             Moves.append((X, Y, X + i, Y))
                             if self.Color(X + i, Y) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y - i < 0:
                                 break
                             if self.Color(X - i, Y - i) == "White":
@@ -259,7 +293,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y - i))
                             if self.Color(X - i, Y - i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y - i < 0:
                                 break
                             if self.Color(X + i, Y - i) == "White":
@@ -267,7 +301,7 @@ class ChessBoard:
                             Moves.append((X, Y, X + i, Y - i))
                             if self.Color(X + i, Y - i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y + i > 7:
                                 break
                             if self.Color(X - i, Y + i) == "White":
@@ -275,7 +309,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y + i))
                             if self.Color(X - i, Y + i) == "Black":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y + i > 7:
                                 break
                             if self.Color(X + i, Y + i) == "White":
@@ -300,6 +334,11 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y - 1))
                         if Y + 1 <= 7 and self.Color(X, Y + 1) != "White":
                             Moves.append((X, Y, X, Y + 1))
+                        if self.WhiteKingMoved == False:
+                            if self.A1RookMoved == False and self.Peice(X - 1, Y) == None and self.Peice(X - 2, Y) == None and self.Peice(X - 3, Y) == None:
+                                Moves.append((X, Y, X - 2, Y))
+                            if self.H1RookMoved == False and self.Peice(X + 1, Y) == None and self.Peice(X + 2, Y) == None:
+                                Moves.append((X, Y, X + 2, Y))
 
                 if self.Color(X, Y) == "Black" and Color == "Black": # Black peices
 
@@ -314,7 +353,7 @@ class ChessBoard:
                             if X < 7 and self.Color(X + 1, Y + 1) == "White":
                                 Moves.append((X, Y, X + 1, Y + 1))
                     if Peice == "♜":
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y - i < 0:
                                 break
                             if self.Color(X, Y - i) == "Black":
@@ -322,7 +361,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y - i))
                             if self.Color(X, Y - i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y + i > 7:
                                 break
                             if self.Color(X, Y + i) == "Black":
@@ -330,7 +369,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y + i))
                             if self.Color(X, Y + i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0:
                                 break
                             if self.Color(X - i, Y) == "Black":
@@ -338,7 +377,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y))
                             if self.Color(X - i, Y) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7:
                                 break
                             if self.Color(X + i, Y) == "Black":
@@ -364,7 +403,7 @@ class ChessBoard:
                         if X + 1 <= 7 and Y + 2 <= 7 and self.Color(X + 1, Y + 2) != "Black":
                             Moves.append((X, Y, X + 1, Y + 2))
                     if Peice == "♝":
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y - i < 0:
                                 break
                             if self.Color(X - i, Y - i) == "Black":
@@ -372,7 +411,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y - i))
                             if self.Color(X - i, Y - i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y - i < 0:
                                 break
                             if self.Color(X + i, Y - i) == "Black":
@@ -380,7 +419,7 @@ class ChessBoard:
                             Moves.append((X, Y, X + i, Y - i))
                             if self.Color(X + i, Y - i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y + i > 7:
                                 break
                             if self.Color(X - i, Y + i) == "Black":
@@ -388,7 +427,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y + i))
                             if self.Color(X - i, Y + i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y + i > 7:
                                 break
                             if self.Color(X + i, Y + i) == "Black":
@@ -397,7 +436,7 @@ class ChessBoard:
                             if self.Color(X + i, Y + i) == "White":
                                 break
                     if Peice == "♛":
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y - i < 0:
                                 break
                             if self.Color(X, Y - i) == "Black":
@@ -405,7 +444,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y - i))
                             if self.Color(X, Y - i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if Y + i > 7:
                                 break
                             if self.Color(X, Y + i) == "Black":
@@ -413,7 +452,7 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y + i))
                             if self.Color(X, Y + i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0:
                                 break
                             if self.Color(X - i, Y) == "Black":
@@ -421,7 +460,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y))
                             if self.Color(X - i, Y) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7:
                                 break
                             if self.Color(X + i, Y) == "Black":
@@ -429,7 +468,7 @@ class ChessBoard:
                             Moves.append((X, Y, X + i, Y))
                             if self.Color(X + i, Y) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y - i < 0:
                                 break
                             if self.Color(X - i, Y - i) == "Black":
@@ -437,7 +476,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y - i))
                             if self.Color(X - i, Y - i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y - i < 0:
                                 break
                             if self.Color(X + i, Y - i) == "Black":
@@ -445,7 +484,7 @@ class ChessBoard:
                             Moves.append((X, Y, X + i, Y - i))
                             if self.Color(X + i, Y - i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X - i < 0 or Y + i > 7:
                                 break
                             if self.Color(X - i, Y + i) == "Black":
@@ -453,7 +492,7 @@ class ChessBoard:
                             Moves.append((X, Y, X - i, Y + i))
                             if self.Color(X - i, Y + i) == "White":
                                 break
-                        for i in range(1, 7):
+                        for i in range(1, 8):
                             if X + i > 7 or Y + i > 7:
                                 break
                             if self.Color(X + i, Y + i) == "Black":
@@ -478,24 +517,29 @@ class ChessBoard:
                             Moves.append((X, Y, X, Y - 1))
                         if Y + 1 <= 7 and self.Color(X, Y + 1) != "Black":
                             Moves.append((X, Y, X, Y + 1))
+                        if self.BlackKingMoved == False:
+                            if self.A8RookMoved == False and self.Peice(X - 1, Y) == None and self.Peice(X - 2, Y) == None and self.Peice(X - 3, Y) == None:
+                                Moves.append((X, Y, X - 2, Y))
+                            if self.H8RookMoved == False and self.Peice(X + 1, Y) == None and self.Peice(X + 2, Y) == None:
+                                Moves.append((X, Y, X + 2, Y))
 
-        if FromGettingCheck == False and self.IsInCheck(Color):
+        if FromGettingCheck == False:
             EditMoves = copy.deepcopy(Moves)
             OldBoard = copy.deepcopy(self.Board)
             for Move in Moves:
-                self.MovePeice(*Move)
+                self.MovePeice(*Move, CountMoveKing=False)
                 if self.IsInCheck(Color):
                     EditMoves.remove(Move)
-                self.MovePeice(Move[2], Move[3], Move[0], Move[1])
+                self.MovePeice(Move[2], Move[3], Move[0], Move[1], CountMoveKing=False)
                 self.Board = copy.deepcopy(OldBoard)
             Moves = EditMoves
             self.Board = OldBoard
 
         return Moves
     
-    def GetValidMovesForPeice(self, X, Y):
+    def GetLegalMovesForPeice(self, X, Y):
         Moves = []
-        for Move in self.GetValidMoves(self.Color(X, Y)):
+        for Move in self.GetLegalMoves(self.Color(X, Y)):
             if Move[0] == X and Move[1] == Y:
                 Moves.append(Move)
 
@@ -508,8 +552,15 @@ Sleep = 0
 TMoves = 0
 while TMoves < 99999999:
     while True:
-        PeiceToMove = Board.PlayerInput(input("Select peice to move: "))
-        if Board.Color(*PeiceToMove) != "White":
+        Input = input("Select peice to move: ")
+        if Input == "Debug":
+            sys("clear")
+            print(Board.GetLegalMovesForPeice(*Board.PlayerInput(input("Select peice: "))))
+            input("Enter to continue")
+            Board.PrintBoard()
+            continue
+        PeiceToMove = Board.PlayerInput(Input)
+        if PeiceToMove == None or Board.Color(*PeiceToMove) != "White":
             sys("clear")
             print("Illegal move")
             sleep(2)
@@ -517,16 +568,16 @@ while TMoves < 99999999:
             continue
         Board.PrintBoard(PeiceToMove)
         MovePeiceTo = Board.PlayerInput(input("Select where to move: "))
-        ValidMoves = Board.GetValidMovesForPeice(*PeiceToMove)
-        if ValidMoves.__len__() <= 0:
+        LegalMoves = Board.GetLegalMovesForPeice(*PeiceToMove)
+        if LegalMoves.__len__() <= 0:
             Board.PrintBoard(MatedColor="White")
             print("Checkmate!")
             exit()
         NewList = []
-        for Move in ValidMoves:
+        for Move in LegalMoves:
             NewList.append((Move[2], Move[3]))
-        ValidMoves = copy.deepcopy(NewList)
-        if MovePeiceTo in ValidMoves:
+        LegalMoves = copy.deepcopy(NewList)
+        if MovePeiceTo in LegalMoves:
             Board.MovePeice(PeiceToMove[0], PeiceToMove[1], MovePeiceTo[0], MovePeiceTo[1])
             break
         else:
@@ -537,12 +588,15 @@ while TMoves < 99999999:
     sleep(Sleep)
     TMoves = round(TMoves + .5, 1)
 
-    ValidMoves = Board.GetValidMoves("Black")
-    if ValidMoves.__len__() <= 0:
+    LegalMoves = Board.GetLegalMoves("Black")
+    if LegalMoves.__len__() <= 0:
         Board.PrintBoard(MatedColor="Black")
         print("Checkmate!")
         exit()
-    Board.MovePeice(*choice(ValidMoves))
+    try:
+        Board.MovePeice(*Bot.FindBestMove(Board, Board.GetLegalMoves("Black"), "Black"))
+    except TypeError:
+        raise TypeError("Your bot returned something that isn't iterable.")
     Board.PrintBoard()
     sleep(Sleep)
     TMoves = round(TMoves + .5, 1)
