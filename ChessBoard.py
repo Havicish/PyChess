@@ -126,6 +126,8 @@ class ChessBoard:
                 return True
             
     def PlayerInput(self, Move: str):
+        Move = Move.lower()
+
         FileToX = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
 
         if Move.__len__() == 4:

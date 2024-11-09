@@ -22,7 +22,7 @@ How to use this repo:
         1 (0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)]
             a       b       c       d       e       f       g       h
 @param LegalMoves: List of tuples representing the legal moves
-    eg. [(4, 6, 4, 5), (4, 6, 4, 4)] all the moves that e2 could play on move 0
+    eg. [(4, 6, 4, 5), (4, 6, 4, 4)] all the moves that e2 could play on move 0 as white
 @param Color: The color that your bot is playing as
 @return: Return a legal move
-    eg. (4, 6, 4, 4) e2 -> e4 on move 0. If your bot returns an illegal move, you will get an error.
+    eg. (4, 6, 4, 4) e2 -> e4 on move 0 as white. If your bot returns an illegal move, you will get an error.

@@ -53,7 +53,7 @@ while TMoves < 99999999:
         print("Checkmate!")
         exit()
     try:
-        BotsMove = Bot.FindBestMove(Board, Board.GetLegalMoves("Black"), "Black")
+        BotsMove = Bot.FindBestMove(copy.deepcopy(Board), Board.GetLegalMoves("Black"), "Black")
         if BotsMove not in LegalMoves:
             raise ValueError(f"Your bot returned an illegal move: {BotsMove}")
         Board.MovePeice(*BotsMove)

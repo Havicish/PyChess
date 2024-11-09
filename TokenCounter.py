@@ -10,4 +10,4 @@ def CountTokensInScript(FilePath):
     return TokenCount
 
 FilePath = os.path.join(os.path.dirname(__file__), 'Bot.py')
-print("Number of tokens:", CountTokensInScript(FilePath) - 16) # Subtract 16 to exclude the function and the required imports
+print("Number of tokens:", CountTokensInScript(FilePath) - 20) # Subtract 20 to exclude the function and the required imports
