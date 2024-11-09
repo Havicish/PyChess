@@ -53,7 +53,10 @@ while TMoves < 99999999:
         print("Checkmate!")
         exit()
     try:
-        Board.MovePeice(*Bot.FindBestMove(Board, Board.GetLegalMoves("Black"), "Black"))
+        BotsMove = Bot.FindBestMove(Board, Board.GetLegalMoves("Black"), "Black")
+        if BotsMove not in LegalMoves:
+            raise ValueError(f"Your bot returned an illegal move: {BotsMove}")
+        Board.MovePeice(*BotsMove)
     except TypeError:
         raise TypeError("Your bot returned something that isn't iterable.")
     Board.PrintBoard()
