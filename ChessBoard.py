@@ -111,6 +111,21 @@ class ChessBoard:
             if self.Peice(4, 0) != "♚":
                 self.BlackKingMoved = True
 
+    def BoardValue(self, Color):
+        PeiceValues = {
+            "♙": 1, "♟": 1,
+            "♘": 3, "♞": 3,
+            "♗": 3, "♝": 3,
+            "♖": 5, "♜": 5,
+            "♕": 9, "♛": 9,
+        }
+        Value = 0
+        for Row in self.Board:
+            for Peice in Row:
+                if Peice and self.Color(Row.index(Peice), self.Board.index(Row)) == Color:
+                    Value += PeiceValues[Peice]
+        return Value
+
     def FindKing(self, Color):
         for Y, Row in enumerate(self.Board):
             for X, Peice in enumerate(Row):

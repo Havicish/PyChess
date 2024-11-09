@@ -6,6 +6,7 @@ from ChessBoard import ChessBoard
 # ChessBoard.PlayerInput(Input) converts a string input into a position tuple. eg. "a1" -> (0, 7) or "f6" -> (5, 2)
 # ChessBoard.IsInCheck(Color) returns True if the given color is in check
 # ChessBoard.FindKing(Color) returns the position of the king for the given color
+# ChessBoard.BoardValue(Color) returns the value of the board for the given color
 
 import random
 
