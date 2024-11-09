@@ -1,6 +1,7 @@
 from time import sleep
 from os import system as sys
 from random import choice
+from colorama import Fore
 import copy
 
 class ChessBoard:
@@ -20,23 +21,54 @@ class ChessBoard:
             self.Board[0][i] = Pieces[i]  # Black pieces
             self.Board[7][i] = Pieces[i].replace("♜", "♖").replace("♞", "♘").replace("♝", "♗").replace("♛", "♕").replace("♚", "♔")  # White pieces
 
-    def PrintBoard(self):
+    def Color(self, X, Y):
+        if self.Board[Y][X] == [] or self.Board[Y][X] == None:
+            return None
+        return "Black" if self.Board[Y][X] in ["♜", "♞", "♝", "♛", "♚", "♟"] else "White"
+
+    def PrintBoard(self, HighlightValidMovesForPeice = None, MatedColor = None):
         sys("clear")
-        for i in range(10):
+
+        MovesForPeice = None
+        if HighlightValidMovesForPeice:
+            MovesForPeice = self.GetValidMovesForPeice(*HighlightValidMovesForPeice)
+            NewList = []
+            for Move in MovesForPeice:
+                NewList.append((Move[2], Move[3]))
+            MovesForPeice = copy.deepcopy(NewList)
+        
+        for _ in range(10):
             print()
-        for j, Row in enumerate(self.Board):
-            for i, Peice in enumerate(Row):
-                print(Peice if Peice else "·", end="")
-                #if Peice == None:
-                #    if (j + i) % 2 == 0:
-                #        print("#", end="")
-                #    else:
-                #        print("·", end="")
-                #else:
-                #    print(Peice, end="")
-                if i != Row.__len__() - 1:
+        for Y, Row in enumerate(self.Board):
+            print(8 - Y, end=" ")
+            for X, Peice in enumerate(Row):
+                Color0 = Fore.CYAN 
+                Color1 = Fore.RED
+                Color2 = Fore.YELLOW
+                Color3 = Fore.BLACK
+                if Peice == None:
+                    if MovesForPeice and (X, Y) in MovesForPeice:
+                        print(Color2 + "." + Fore.RESET, end="")
+                    else:
+                        if (Y + X) % 2 == 0:
+                            print(Color0 + "." + Fore.RESET, end="")
+                        else:
+                            print(Color1 + "·" + Fore.RESET, end="")
+                else:
+                    if MatedColor and self.Color(X, Y) == MatedColor:
+                        print(Color3 + Peice + Fore.RESET, end="")
+                    else:
+                        if MovesForPeice and (X, Y) in MovesForPeice:
+                            print(Color2 + Peice + Fore.RESET, end="")
+                        else:
+                            if (Y + X) % 2 == 0:
+                                print(Color0 + Peice + Fore.RESET, end="")
+                            else:
+                                print(Color1 + Peice + Fore.RESET, end="")
+                if X != Row.__len__() - 1:
                     print(" ", end="")
             print()
+        print("  a b c d e f g h")
 
     def MovePeice(self, X0, Y0, X1, Y1):
         self.Board[Y1][X1] = self.Board[Y0][X0]
@@ -49,11 +81,6 @@ class ChessBoard:
                     return (X, Y)
                 if Peice == "♚" and Color == "Black":
                     return (X, Y)
-
-    def Color(self, X, Y):
-        if self.Board[Y][X] == [] or self.Board[Y][X] == None:
-            return None
-        return "Black" if self.Board[Y][X] in ["♜", "♞", "♝", "♛", "♚", "♟"] else "White"
     
     def Peice(self, X, Y):
         if self.Board[Y][X] == []:
@@ -69,17 +96,26 @@ class ChessBoard:
     def PlayerInput(self, Move: str):
         FileToX = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
 
-        StartFile = Move[0]
-        StartRank = Move[1]
-        EndFile = Move[2]
-        EndRank = Move[3]
+        if Move.__len__() == 4:
+            StartFile = Move[0]
+            StartRank = Move[1]
+            EndFile = Move[2]
+            EndRank = Move[3]
 
-        X0 = FileToX[StartFile]
-        Y0 = 8 - int(StartRank)
-        X1 = FileToX[EndFile]
-        Y1 = 8 - int(EndRank)
+            X0 = FileToX[StartFile]
+            Y0 = 8 - int(StartRank)
+            X1 = FileToX[EndFile]
+            Y1 = 8 - int(EndRank)
 
-        return (X0, Y0, X1, Y1)
+            return (X0, Y0, X1, Y1)
+        elif Move.__len__() == 2:
+            StartFile = Move[0]
+            StartRank = Move[1]
+
+            X0 = FileToX[StartFile]
+            Y0 = 8 - int(StartRank)
+
+            return (X0, Y0)
 
     def GetValidMoves(self, Color, FromGettingCheck = False):
         Moves = []
@@ -468,15 +504,44 @@ class ChessBoard:
 Board = ChessBoard()
 Board.PrintBoard()
 
-Sleep = 0.5
+Sleep = 0
 TMoves = 0
-while TMoves < 1000:
-    Board.MovePeice(*Board.PlayerInput(input("Move: ")))
-    Board.PrintBoard()
+while TMoves < 99999999:
+    while True:
+        PeiceToMove = Board.PlayerInput(input("Select peice to move: "))
+        if Board.Color(*PeiceToMove) != "White":
+            sys("clear")
+            print("Illegal move")
+            sleep(2)
+            Board.PrintBoard()
+            continue
+        Board.PrintBoard(PeiceToMove)
+        MovePeiceTo = Board.PlayerInput(input("Select where to move: "))
+        ValidMoves = Board.GetValidMovesForPeice(*PeiceToMove)
+        if ValidMoves.__len__() <= 0:
+            Board.PrintBoard(MatedColor="White")
+            print("Checkmate!")
+            exit()
+        NewList = []
+        for Move in ValidMoves:
+            NewList.append((Move[2], Move[3]))
+        ValidMoves = copy.deepcopy(NewList)
+        if MovePeiceTo in ValidMoves:
+            Board.MovePeice(PeiceToMove[0], PeiceToMove[1], MovePeiceTo[0], MovePeiceTo[1])
+            break
+        else:
+            sys("clear")
+            print("Illegal move")
+            sleep(2)
+        Board.PrintBoard()
     sleep(Sleep)
     TMoves = round(TMoves + .5, 1)
 
     ValidMoves = Board.GetValidMoves("Black")
+    if ValidMoves.__len__() <= 0:
+        Board.PrintBoard(MatedColor="Black")
+        print("Checkmate!")
+        exit()
     Board.MovePeice(*choice(ValidMoves))
     Board.PrintBoard()
     sleep(Sleep)
