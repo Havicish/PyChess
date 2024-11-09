@@ -4,7 +4,7 @@ I got the idea for this repo from Sebastian Lague's mini chess bot challenge.
 
 How to use this repo:
     Code your bot in the Bot.py file.
-    Run the Chess.py file to test your bot.
+    Run the RunChess.py file to test your bot.
     Run the TokenCounter.py file to count the number of tokens that your bot uses.
 
 
