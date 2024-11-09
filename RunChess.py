@@ -54,7 +54,7 @@ while TMoves < 99999999:
         exit()
     try:
         BotsMove = Bot.FindBestMove(copy.deepcopy(Board), Board.GetLegalMoves("Black"), "Black")
-        if BotsMove not in LegalMoves:
+        if BotsMove not in LegalMoves and Board.Color(*BotsMove[:2]) != "Black":
             raise ValueError(f"Your bot returned an illegal move: {BotsMove}")
         Board.MovePeice(*BotsMove)
     except TypeError:
