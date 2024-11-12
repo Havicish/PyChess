@@ -12,5 +12,33 @@ import random
 
 # Reference the README.md for the function signature
 def FindBestMove(Board, LegalMoves, Color = "Black"):
-    # Return a random legal move
-    return random.choice(LegalMoves)
+    BestMoves = []
+    BestValue = None
+
+    for Move in LegalMoves:
+        TempBoard = Board.Copy()
+        TempBoard.MovePeice(*Move)
+        Value = TempBoard.BoardValue(Color)
+        if BestValue == None or Value < BestValue:
+            BestValue = Value
+            BestMoves = [Move]
+        elif Value == BestValue:
+            BestMoves.append(Move)
+
+    for Move in BestMoves:
+        TempBoard = Board.Copy()
+        TempBoard.MovePeice(*Move)
+
+        for Move2 in TempBoard.GetLegalMoves(TempBoard.FlipColor(Color)):
+            TempBoard2 = TempBoard.Copy()
+            TempBoard2.MovePeice(*Move2)
+            Value = TempBoard2.BoardValue(Color)
+
+            if BestValue == None or Value < BestValue:
+                BestValue = Value
+                BestMoves = [Move]
+            elif Value == BestValue:
+                BestMoves.append(Move)
+
+    print(BestMoves)
+    return random.choice(BestMoves)

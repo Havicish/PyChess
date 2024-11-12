@@ -52,8 +52,8 @@ class ChessBoard:
         for Y, Row in enumerate(self.Board):
             print(8 - Y, end=" ")
             for X, Peice in enumerate(Row):
-                Color0 = Fore.CYAN
-                Color1 = Fore.MAGENTA
+                Color0 = Fore.BLUE
+                Color1 = Fore.RED
                 Color2 = Fore.YELLOW # Legal moves
                 Color3 = Fore.LIGHTBLACK_EX # Checkmated
                 if Peice == None:
@@ -111,6 +111,9 @@ class ChessBoard:
             if self.Peice(4, 0) != "♚":
                 self.BlackKingMoved = True
 
+    def FlipColor(self, Color):
+        return "Black" if Color == "White" else "White"
+
     def BoardValue(self, Color):
         PeiceValues = {
             "♙": 1, "♟": 1,
@@ -122,9 +125,30 @@ class ChessBoard:
         Value = 0
         for Row in self.Board:
             for Peice in Row:
-                if Peice and self.Color(Row.index(Peice), self.Board.index(Row)) == Color:
+                if Peice in PeiceValues and Peice and self.Color(Row.index(Peice), self.Board.index(Row)) == Color:
                     Value += PeiceValues[Peice]
         return Value
+    
+    def PieceValue(self, X, Y):
+        PeiceValues = {
+            "♙": 1, "♟": 1,
+            "♘": 3, "♞": 3,
+            "♗": 3, "♝": 3,
+            "♖": 5, "♜": 5,
+            "♕": 9, "♛": 9,
+        }
+        peice = self.Peice(X, Y)
+        if peice in PeiceValues:
+            return PeiceValues[peice]
+        else:
+            return 0
+
+    def Copy(self):
+        NewBoard = ChessBoard()
+        for Y, Row in enumerate(self.Board):
+            for X, Peice in enumerate(Row):
+                NewBoard.Board[Y][X] = Peice
+        return NewBoard
 
     def FindKing(self, Color):
         for Y, Row in enumerate(self.Board):
