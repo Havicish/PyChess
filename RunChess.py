@@ -5,6 +5,7 @@ import copy
 import Bot
 
 Board = ChessBoard()
+#Board.MovePiece(0, 6, 0, 3)
 Board.PrintBoard()
 
 Sleep = 0
@@ -37,7 +38,7 @@ while TMoves < 99999999:
             NewList.append((Move[2], Move[3]))
         LegalMoves = copy.deepcopy(NewList)
         if MovePeiceTo in LegalMoves:
-            Board.MovePeice(PeiceToMove[0], PeiceToMove[1], MovePeiceTo[0], MovePeiceTo[1])
+            Board.MovePiece(PeiceToMove[0], PeiceToMove[1], MovePeiceTo[0], MovePeiceTo[1])
             break
         else:
             sys("clear")
@@ -56,7 +57,7 @@ while TMoves < 99999999:
         BotsMove = Bot.FindBestMove(copy.deepcopy(Board), Board.GetLegalMoves("Black"), "Black")
         if BotsMove not in LegalMoves and Board.Color(*BotsMove[:2]) != "Black":
             raise ValueError(f"Your bot returned an illegal move: {BotsMove}")
-        Board.MovePeice(*BotsMove)
+        Board.MovePiece(*BotsMove)
     except TypeError:
         raise TypeError("Your bot returned something that isn't iterable.")
     Board.PrintBoard()

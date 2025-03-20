@@ -31,6 +31,17 @@ class ChessBoard:
             self.Board[0][i] = Pieces[i]  # Black pieces
             self.Board[7][i] = Pieces[i].replace("♜", "♖").replace("♞", "♘").replace("♝", "♗").replace("♛", "♕").replace("♚", "♔")  # White pieces
 
+    def Copy(self):
+        new_board = ChessBoard()
+        new_board.Board = [row[:] for row in self.Board]
+        new_board.WhiteKingMoved = self.WhiteKingMoved
+        new_board.A1RookMoved = self.A1RookMoved
+        new_board.H1RookMoved = self.H1RookMoved
+        new_board.BlackKingMoved = self.BlackKingMoved
+        new_board.A8RookMoved = self.A8RookMoved
+        new_board.H8RookMoved = self.H8RookMoved
+        return new_board
+
     def Color(self, X, Y):
         if self.Board[Y][X] == [] or self.Board[Y][X] == None:
             return None
@@ -80,13 +91,29 @@ class ChessBoard:
             print()
         print("  a b c d e f g h")
 
-    def Peice(self, X, Y):
+    def FlipColor(self, Color):
+        return "White" if Color == "Black" else "Black"
+    
+    def PieceValue(self, X, Y):
+        PeiceValues = {
+            "♙": 1, "♟": 1,
+            "♘": 3, "♞": 3,
+            "♗": 3, "♝": 3,
+            "♖": 5, "♜": 5,
+            "♕": 9, "♛": 9,
+            "♔": 0, "♚": 0,
+            None: 0
+        }
+        Peice = self.Piece(X, Y)
+        return PeiceValues[Peice]
+
+    def Piece(self, X, Y):
         if self.Board[Y][X] == []:
             return None
         return self.Board[Y][X]
 
-    def MovePeice(self, X0, Y0, X1, Y1, CountMoveKing = True):
-        if self.Peice(X0, Y0) in ["♔", "♚"] and abs(X0 - X1) >= 2:
+    def MovePiece(self, X0, Y0, X1, Y1, CountMoveKing = True):
+        if self.Piece(X0, Y0) in ["♔", "♚"] and abs(X0 - X1) >= 2:
             if X1 == 6:  # Kingside castling
                 self.Board[Y0][5] = self.Board[Y0][7]
                 self.Board[Y0][7] = None
@@ -95,20 +122,20 @@ class ChessBoard:
                 self.Board[Y0][0] = None
         self.Board[Y1][X1] = self.Board[Y0][X0]
         self.Board[Y0][X0] = None
-        if (self.Peice(X1, Y1) == "♙" or self.Peice(X1, Y1) == "♟") and (Y1 == 0 or Y1 == 7):
+        if (self.Piece(X1, Y1) == "♙" or self.Piece(X1, Y1) == "♟") and (Y1 == 0 or Y1 == 7):
             self.Board[Y1][X1] = "♕" if self.Color(X1, Y1) == "White" else "♛"
         if CountMoveKing == True:
-            if self.Peice(0, 7) not in ["♖", "♜"]:
+            if self.Piece(0, 7) not in ["♖", "♜"]:
                 self.A1RookMoved = True
-            if self.Peice(7, 7) not in ["♖", "♜"]:
+            if self.Piece(7, 7) not in ["♖", "♜"]:
                 self.H1RookMoved  = True
-            if self.Peice(0, 0) not in ["♖", "♜"]:
+            if self.Piece(0, 0) not in ["♖", "♜"]:
                 self.A8RookMoved = True
-            if self.Peice(7, 0) not in ["♖", "♜"]:
+            if self.Piece(7, 0) not in ["♖", "♜"]:
                 self.H8RookMoved = True
-            if self.Peice(4, 7) != "♔":
+            if self.Piece(4, 7) != "♔":
                 self.WhiteKingMoved = True
-            if self.Peice(4, 0) != "♚":
+            if self.Piece(4, 0) != "♚":
                 self.BlackKingMoved = True
 
     def BoardValue(self, Color):
@@ -118,12 +145,16 @@ class ChessBoard:
             "♗": 3, "♝": 3,
             "♖": 5, "♜": 5,
             "♕": 9, "♛": 9,
+            "♔": 0, "♚": 0,
+            None: 0
         }
         Value = 0
         for Row in self.Board:
             for Peice in Row:
                 if Peice and self.Color(Row.index(Peice), self.Board.index(Row)) == Color:
                     Value += PeiceValues[Peice]
+                if Peice and self.Color(Row.index(Peice), self.Board.index(Row)) != Color:
+                    Value -= PeiceValues[Peice]
         return Value
 
     def FindKing(self, Color):
@@ -176,9 +207,9 @@ class ChessBoard:
 
                     if Peice == "♙":
                         if Y != 0:
-                            if self.Peice(X, Y - 1) == None:
+                            if self.Piece(X, Y - 1) == None:
                                 Moves.append((X, Y, X, Y - 1))
-                            if Y == 6 and self.Peice(X, Y - 2) == None and self.Peice(X, Y - 1) == None:
+                            if Y == 6 and self.Piece(X, Y - 2) == None and self.Piece(X, Y - 1) == None:
                                 Moves.append((X, Y, X, Y - 2))
                             if X > 0 and self.Color(X - 1, Y - 1) == "Black":
                                 Moves.append((X, Y, X - 1, Y - 1))
@@ -350,18 +381,18 @@ class ChessBoard:
                         if Y + 1 <= 7 and self.Color(X, Y + 1) != "White":
                             Moves.append((X, Y, X, Y + 1))
                         if self.WhiteKingMoved == False:
-                            if self.A1RookMoved == False and self.Peice(X - 1, Y) == None and self.Peice(X - 2, Y) == None and self.Peice(X - 3, Y) == None:
+                            if self.A1RookMoved == False and self.Piece(X - 1, Y) == None and self.Piece(X - 2, Y) == None and self.Piece(X - 3, Y) == None:
                                 Moves.append((X, Y, X - 2, Y))
-                            if self.H1RookMoved == False and self.Peice(X + 1, Y) == None and self.Peice(X + 2, Y) == None:
+                            if self.H1RookMoved == False and self.Piece(X + 1, Y) == None and self.Piece(X + 2, Y) == None:
                                 Moves.append((X, Y, X + 2, Y))
 
                 if self.Color(X, Y) == "Black" and Color == "Black": # Black peices
 
                     if Peice == "♟":
                         if Y != 0:
-                            if self.Peice(X, Y + 1) == None:
+                            if self.Piece(X, Y + 1) == None:
                                 Moves.append((X, Y, X, Y + 1))
-                            if Y == 1 and self.Peice(X, Y + 2) == None and self.Peice(X, Y + 1) == None:
+                            if Y == 1 and self.Piece(X, Y + 2) == None and self.Piece(X, Y + 1) == None:
                                 Moves.append((X, Y, X, Y + 2))
                             if X > 0 and self.Color(X - 1, Y + 1) == "White":
                                 Moves.append((X, Y, X - 1, Y + 1))
@@ -533,19 +564,19 @@ class ChessBoard:
                         if Y + 1 <= 7 and self.Color(X, Y + 1) != "Black":
                             Moves.append((X, Y, X, Y + 1))
                         if self.BlackKingMoved == False:
-                            if self.A8RookMoved == False and self.Peice(X - 1, Y) == None and self.Peice(X - 2, Y) == None and self.Peice(X - 3, Y) == None:
+                            if self.A8RookMoved == False and self.Piece(X - 1, Y) == None and self.Piece(X - 2, Y) == None and self.Piece(X - 3, Y) == None:
                                 Moves.append((X, Y, X - 2, Y))
-                            if self.H8RookMoved == False and self.Peice(X + 1, Y) == None and self.Peice(X + 2, Y) == None:
+                            if self.H8RookMoved == False and self.Piece(X + 1, Y) == None and self.Piece(X + 2, Y) == None:
                                 Moves.append((X, Y, X + 2, Y))
 
         if FromGettingCheck == False:
             EditMoves = copy.deepcopy(Moves)
             OldBoard = copy.deepcopy(self.Board)
             for Move in Moves:
-                self.MovePeice(*Move, CountMoveKing=False)
+                self.MovePiece(*Move, CountMoveKing=False)
                 if self.IsInCheck(Color):
                     EditMoves.remove(Move)
-                self.MovePeice(Move[2], Move[3], Move[0], Move[1], CountMoveKing=False)
+                self.MovePiece(Move[2], Move[3], Move[0], Move[1], CountMoveKing=False)
                 self.Board = copy.deepcopy(OldBoard)
             Moves = EditMoves
             self.Board = OldBoard
